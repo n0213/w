@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Chronicles of Nile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Noto+Serif+KR:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-deep: #080808;
+            --gold-main: #c5a059;
+            --gold-dim: #7d6025;
+            --gold-light: #ffeb3b;
+            --text-main: #dcdcdc;
+            --accent-blue: #2c5282;
+            --main-bg-image: url('https://i.ibb.co/0yBZbzwp/pyramid-desert.jpg'); 
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: 'Noto Serif KR', serif;
+            overflow: hidden;
+            height: 100vh; width: 100vw;
+            user-select: none;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes blink { 50% { opacity: 0.3; } }
+
+        /* 1. 이름 입력 */
+        #screen-name {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 4000; background: #000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 1s;
+        }
+        .name-label { font-size: 1.2rem; color: var(--gold-main); margin-bottom: 2rem; letter-spacing: 2px; }
+        .name-input {
+            background: transparent; border: none; border-bottom: 2px solid var(--gold-dim);
+            color: var(--text-main); font-size: 2.5rem; text-align: center;
+            width: 400px; padding: 10px; font-family: 'Cinzel', serif; outline: none;
+            margin-bottom: 3rem; transition: 0.3s;
+        }
+        .name-input:focus { border-bottom-color: var(--gold-main); }
+        .name-submit {
+            padding: 1rem 4rem; background: #111; border: 1px solid var(--gold-dim);
+            color: var(--gold-main); cursor: pointer; font-family: 'Cinzel', serif; 
+            font-size: 1.2rem; transition: 0.3s; letter-spacing: 2px;
+        }
+        .name-submit:hover { border-color: var(--gold-light); box-shadow: 0 0 20px var(--gold-dim); }
+
+        /* 2. 타이틀 */
+        #screen-title {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 3000; background: radial-gradient(circle at bottom, #2e2210 0%, #000000 90%);
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 2s ease;
+        }
+        .game-logo {
+            font-family: 'Cinzel', serif; font-size: 6rem; font-weight: 900;
+            background: linear-gradient(to bottom, #ffffcc, #ffd700, #c5a059, #5e4b25);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 40px rgba(197, 160, 89, 0.6)); 
+            margin-bottom: 4rem; text-align: center; line-height: 1.1; letter-spacing: -2px;
+        }
+        .start-btn {
+            padding: 1.2rem 5rem; background: transparent; border: 2px solid var(--gold-main);
+            color: var(--gold-main); font-family: 'Cinzel', serif; font-size: 1.8rem; font-weight: bold;
+            cursor: pointer; transition: 0.3s; letter-spacing: 4px;
+        }
+        .start-btn:hover { background: var(--gold-main); color: #000; box-shadow: 0 0 60px var(--gold-dim); transform: scale(1.05); }
+
+        /* 3. 프롤로그 [수정: 텍스트 박스 높이 축소] */
+        #screen-prologue { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000; background: #000; display: none; }
+        .vn-bg { width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0.8; transition: background-image 0.8s ease-in-out; }
+        
+        .vn-textbox {
+            position: absolute; bottom: 0; left: 0; width: 100%; 
+            height: 180px; /* 높이 축소 (기존 250px) */
+            background: linear-gradient(to top, #000 95%, transparent); /* 그라데이션 더 진하게 */
+            padding: 2rem 15% 1rem; display: flex; flex-direction: column; justify-content: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.3);
+        }
+        .vn-text { font-size: 1.2rem; line-height: 1.6; color: #e0e0e0; text-shadow: 0 2px 5px #000; font-family: 'Noto Serif KR', serif; margin-bottom: 0.5rem; word-break: keep-all; }
+        .vn-highlight { color: var(--gold-main); font-weight: 700; text-shadow: 0 0 10px rgba(197, 160, 89, 0.5); }
+        .vn-next-icon { position: absolute; bottom: 20px; right: 50px; color: var(--gold-dim); font-size: 0.9rem; animation: blink 2s infinite; cursor: pointer; font-family: 'Cinzel', serif; letter-spacing: 2px; }
+        .skip-btn { position: absolute; top: 30px; right: 30px; background: transparent; border: 1px solid #444; color: #666; padding: 0.5rem 1.5rem; cursor: pointer; font-family: 'Cinzel', serif; z-index: 10; transition: 0.3s; }
+        .skip-btn:hover { border-color: var(--gold-main); color: var(--gold-main); }
+
+        /* 4. 메인 화면 */
+        #screen-main {
+            position: relative; width: 100%; height: 100%;
+            display: none; opacity: 0; transition: opacity 1s ease;
+            background-image: linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 100%), var(--main-bg-image);
+            background-size: cover; background-position: center;
+            display: flex; z-index: 100;
+        }
+
+        .sidebar {
+            width: 320px; height: 100%; background: rgba(10, 10, 10, 0.95);
+            border-right: 1px solid rgba(197, 160, 89, 0.3); padding: 3rem 2rem;
+            display: flex; flex-direction: column; flex-shrink: 0; z-index: 5000;
+        }
+        .sidebar-header { margin-bottom: 3rem; }
+        .sidebar-logo { font-family: 'Cinzel', serif; font-size: 2.2rem; color: var(--gold-main); margin-bottom: 0.5rem; letter-spacing: -1px; line-height: 1; }
+        .sidebar-sub { font-size: 0.8rem; color: #666; letter-spacing: 1px; font-family: 'Noto Serif KR', serif;}
+        .user-info { margin-top: auto; padding-top: 1.5rem; border-top: 1px solid #222; font-size: 0.85rem; color: #888; font-family: 'Cinzel', serif; }
+
+        /* 네비게이션 메뉴 */
+        .nav-menu { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+        .nav-item {
+            font-family: 'Cinzel', serif; font-size: 1.4rem; color: #777;
+            cursor: pointer; transition: 0.3s; padding: 0.5rem 0;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-item:hover, .nav-item.active { color: var(--gold-main); padding-left: 10px; }
+        .nav-item.active { text-shadow: 0 0 10px rgba(197, 160, 89, 0.3); font-weight: bold; }
+        
+        .sub-menu {
+            list-style: none; padding-left: 1.5rem; margin-bottom: 1rem;
+            display: none; flex-direction: column; gap: 0.5rem;
+            border-left: 1px solid #333; margin-left: 5px;
+        }
+        .sub-menu.show { display: flex; animation: fadeIn 0.3s ease; }
+        .sub-item { font-family: 'Noto Serif KR', serif; font-size: 0.95rem; color: #666; cursor: pointer; transition: 0.2s; }
+        .sub-item:hover, .sub-item.active { color: #fff; }
+        .sub-item.active { color: var(--gold-light); font-weight: bold; }
+
+        .mini-game-trigger {
+            margin-top: 1.5rem; padding: 1rem; border: 1px solid #333; color: #888; text-align: center;
+            cursor: pointer; font-family: 'Cinzel', serif; font-size: 0.9rem; transition: 0.3s;
+        }
+        .mini-game-trigger:hover { border-color: var(--gold-main); color: var(--gold-main); background: rgba(197, 160, 89, 0.05); }
+
+        .main-content { flex-grow: 1; height: 100%; overflow-y: auto; padding: 3rem 4rem 6rem; position: relative; z-index: 10; }
+        .section-title {
+            font-family: 'Cinzel', serif; font-size: 5rem; color: rgba(255,255,255,0.03);
+            position: absolute; top: 1rem; right: 3rem; pointer-events: none; z-index: 0;
+        }
+        .gallery-container {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 2rem;
+            position: relative; z-index: 5;
+        }
+
+        /* 타임라인 */
+        .timeline-container { position: relative; max-width: 800px; margin: 0 auto; display: none; }
+        .timeline-line {
+            position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
+            background: linear-gradient(to bottom, transparent, var(--gold-dim), transparent);
+            transform: translateX(-50%);
+        }
+        .timeline-item {
+            position: relative; margin-bottom: 4rem; width: 50%; padding: 0 2rem;
+            opacity: 0; animation: slideUp 0.8s forwards;
+        }
+        .timeline-item:nth-child(odd) { left: 0; text-align: right; }
+        .timeline-item:nth-child(even) { left: 50%; text-align: left; }
+        .timeline-item::after {
+            content: ''; position: absolute; top: 20px; width: 12px; height: 12px;
+            background: var(--gold-main); border-radius: 50%; box-shadow: 0 0 10px var(--gold-main);
+        }
+        .timeline-item:nth-child(odd)::after { right: -6px; }
+        .timeline-item:nth-child(even)::after { left: -6px; }
+        
+        .t-year { color: var(--gold-light); font-family: 'Cinzel', serif; font-size: 1.2rem; margin-bottom: 0.5rem; }
+        .t-title { color: #fff; font-size: 1.4rem; font-weight: bold; margin-bottom: 0.5rem; text-shadow: 0 2px 5px black; }
+        .t-desc { color: #aaa; font-size: 1rem; line-height: 1.6; }
+
+        .card { background: rgba(0,0,0,0.6); border: 1px solid #333; cursor: pointer; transition: 0.4s; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .card:hover { transform: translateY(-7px); border-color: var(--gold-dim); box-shadow: 0 15px 30px rgba(0,0,0,0.8); }
+        .card-img-box { width: 100%; aspect-ratio: 3/2; overflow: hidden; background: #111; border-bottom: 1px solid #222; }
+        .card-img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; filter: grayscale(70%); }
+        .card:hover .card-img { filter: grayscale(0%); transform: scale(1.05); }
+        .card-info { padding: 1rem; }
+        .card-name { color: #ddd; font-family: 'Cinzel', serif; font-size: 1.1rem; margin-bottom: 0.2rem; }
+        .card:hover .card-name { color: var(--gold-main); }
+        .card-role { color: #666; font-size: 0.8rem; text-transform: uppercase; }
+
+        /* 5. 모달 */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 6000; display: none; justify-content: center; align-items: center; }
+        .modal-overlay.open { display: flex; }
+        .modal-content { background: #111; width: 900px; max-height: 85vh; border: 1px solid var(--gold-dim); display: flex; flex-direction: column; box-shadow: 0 0 100px rgba(0,0,0,0.8); position: relative; }
+        .modal-header { display: flex; padding: 2.5rem; background: linear-gradient(to right, #1a1a1a, #0d0d0d); border-bottom: 1px solid #222; align-items: flex-end; }
+        .modal-img-frame { width: 200px; height: 150px; border: 2px solid var(--gold-dim); padding: 5px; margin-right: 2rem; flex-shrink: 0; background: #000; }
+        .modal-img-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .modal-info-h { flex-grow: 1; }
+        .modal-title { font-family: 'Cinzel', serif; font-size: 2.8rem; color: var(--gold-main); margin-bottom: 0.5rem; letter-spacing: -1px; }
+        .modal-role { color: var(--accent-blue); font-size: 1rem; letter-spacing: 1px; font-weight: bold; font-family: 'Noto Serif KR', serif; }
+        .modal-body { padding: 2.5rem; overflow-y: auto; background: #080808; }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; background: rgba(255,255,255,0.03); padding: 1.5rem; border: 1px solid #222; margin-bottom: 2rem; }
+        .stat-item strong { display: block; color: var(--gold-dim); font-size: 0.8rem; font-family: 'Noto Serif KR', serif; margin-bottom: 0.3rem; }
+        .stat-item span { color: #ccc; font-size: 0.95rem; }
+        .modal-desc { font-size: 1.1rem; line-height: 1.9; color: #bbb; margin-bottom: 3rem; white-space: pre-line; text-align: justify; border-left: 3px solid var(--gold-dim); padding-left: 1.5rem; }
+        .rel-title { font-family: 'Noto Serif KR', serif; color: #555; font-size: 0.9rem; margin-bottom: 1rem; border-bottom: 1px solid #222; padding-bottom: 0.5rem; }
+        .relation-chips { display: flex; flex-wrap: wrap; gap: 1rem; }
+        .chip { display: inline-block; border: 1px solid #333; padding: 0.4rem 0.8rem; margin: 0 0.5rem 0.5rem 0; font-size: 0.85rem; color: #888; cursor: pointer; transition: 0.2s; }
+        .chip:hover { border-color: var(--gold-main); color: var(--gold-main); background: rgba(197, 160, 89, 0.05); }
+        .chip b { color: var(--accent-blue); margin-right: 5px; }
+        .modal-close { position: absolute; top: 1.5rem; right: 2rem; background: none; border: none; color: #444; font-size: 2.5rem; cursor: pointer; transition: 0.3s; }
+        .modal-close:hover { color: #fff; transform: rotate(90deg); }
+
+        /* 6. 미니게임 허브 */
+        #screen-game { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 7000; display: none; flex-direction: column; justify-content: center; align-items: center; }
+        .hub-menu { display: flex; gap: 2rem; margin-bottom: 2rem; }
+        .hub-btn { width: 220px; height: 140px; border: 1px solid var(--gold-dim); background: #111; color: #fff; cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .hub-btn:hover { border-color: var(--gold-light); box-shadow: 0 0 20px var(--gold-dim); background: #1a1a1a; transform: translateY(-5px); }
+        .hub-btn h3 { font-family: 'Cinzel', serif; margin-bottom: 0.5rem; color: var(--gold-main); font-size: 1.2rem; }
+        .hub-btn span { font-family: 'Noto Serif KR', serif; font-size: 0.9rem; color: #888; }
+        
+        #game-area-quiz { display: none; flex-direction: column; align-items: center; width: 100%; }
+        
+        .quiz-box { text-align: center; width: 700px; }
+        .quiz-score-display { font-family: 'Cinzel', serif; font-size: 1.5rem; color: var(--gold-main); margin-bottom: 2rem; }
+        .quiz-question { font-size: 1.4rem; margin-bottom: 3rem; color: #fff; min-height: 4rem; line-height: 1.6; word-break: keep-all; }
+        .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .quiz-btn { padding: 1.2rem; border: 1px solid #555; background: transparent; color: #ccc; cursor: pointer; transition: 0.3s; font-size: 1.1rem; font-family: 'Noto Serif KR', serif; }
+        .quiz-btn:hover { border-color: var(--gold-main); color: #fff; background: rgba(197, 160, 89, 0.1); }
+
+        .game-close-btn { margin-top: 3rem; border: 1px solid #fff; background: transparent; color: #fff; padding: 0.5rem 2rem; cursor: pointer; font-family: 'Noto Serif KR', serif; }
+        .game-close-btn:hover { background: #fff; color: #000; }
+
+        @media (max-width: 1024px) {
+            #screen-main { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; padding: 1rem; flex-direction: column; align-items: center; }
+            .nav-menu { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 1.5rem; width: 100%; }
+            .sub-menu { 
+                position: absolute; background: #111; padding: 1rem; border: 1px solid #333; 
+                top: 100%; left: 0; right: 0; z-index: 200; text-align: center; 
+            }
+            .mini-game-trigger { display: none; }
+            .main-content { padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="screen-name">
+        <div class="name-label">기록자의 이름을 입력하십시오</div>
+        <input type="text" class="name-input" id="playerName" placeholder="NAME" maxlength="10" onkeypress="if(event.key==='Enter') submitName()">
+        <button class="name-submit" onclick="submitName()">기록 시작</button>
+    </div>
+
+    <div id="screen-title">
+        <div class="game-logo">CHRONICLES<br>OF NILE</div>
+        <button class="start-btn" onclick="startPrologue()">GAME START</button>
+    </div>
+
+    <div id="screen-prologue" onclick="nextStory()">
+        <div class="vn-bg" id="vnBg"></div>
+        <div class="vn-textbox">
+            <div class="vn-text" id="vnText"></div>
+            <div class="vn-next-icon">▼ Click</div>
+        </div>
+        <button class="skip-btn" onclick="endPrologue()">SKIP >></button>
+    </div>
+
+    <div id="screen-main">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">NILE<br>ARCHIVE</div>
+                <div class="sidebar-sub">신과 인간의 기록</div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item active" id="menu-all" onclick="resetAndFilter('all', this)">ALL</li>
+                
+                <li class="nav-item" id="menu-god" onclick="toggleSubMenu('sub-god', this, 'god')">GODS</li>
+                <ul class="sub-menu" id="sub-god">
+                    <li class="sub-item" onclick="filterGallery('god-ennead', this)">- 엔네아드 (9주신)</li>
+                    <li class="sub-item" onclick="filterGallery('god-other', this)">- 수호신 및 기타</li>
+                </ul>
+
+                <li class="nav-item" id="menu-human" onclick="toggleSubMenu('sub-human', this, 'human')">HUMANS</li>
+                <ul class="sub-menu" id="sub-human">
+                    <li class="sub-item" onclick="filterGallery('human-high', this)">- 왕족 / 신관</li>
+                    <li class="sub-item" onclick="filterGallery('human-mid', this)">- 평민 / 장인</li>
+                    <li class="sub-item" onclick="filterGallery('human-low', this)">- 무법자 / 기타</li>
+                </ul>
+
+                <li class="nav-item" id="menu-history" onclick="showHistory(this)">HISTORY</li>
+            </ul>
+
+            <div class="user-info" id="userDisplay">Recorder: Guest</div>
+            <div class="mini-game-trigger" onclick="openGameHub()">◆ 게임 허브 (Game Hub)</div>
+        </nav>
+
+        <main class="main-content">
+            <div class="section-title" id="sectionTitle">ALL</div>
+            <div class="gallery-container" id="gallery"></div>
+            <div class="timeline-container" id="history-container"></div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="modal" onclick="closeModal(event)">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModalBtn()">&times;</button>
+            <div class="modal-header">
+                <div class="modal-img-frame">
+                    <img id="modalImg" src="" alt="" onerror="this.src='https://via.placeholder.com/200x150?text=No+Image'">
+                </div>
+                <div class="modal-info-h">
+                    <div class="modal-title" id="modalName">Name</div>
+                    <div class="modal-role" id="modalRole">Role</div>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="stat-grid" id="modalStats"></div>
+                <div class="modal-desc" id="modalDesc"></div>
+                <div class="rel-title">관련 인물</div>
+                <div class="relation-chips" id="relationChips"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-game">
+        <div class="game-info" style="color:var(--gold-main); font-size:2.5rem; font-family:'Cinzel', serif; margin-bottom:30px;">GAME HUB</div>
+        
+        <div class="hub-menu" id="gameHubMenu">
+            <div class="hub-btn" onclick="startGame('quiz')">
+                <h3>RIDDLE</h3>
+                <span>토트의 수수께끼<br>(서바이벌)</span>
+            </div>
+        </div>
+
+        <div id="game-area-quiz">
+            <div class="quiz-score-display" id="quizScore">Score: 0</div>
+            <div class="quiz-box">
+                <div class="quiz-question" id="quizQuestion">문제 로딩중...</div>
+                <div class="quiz-options" id="quizOptions"></div>
+            </div>
+        </div>
+
+        <button class="game-close-btn" onclick="closeGameHub()">EXIT HUB</button>
+    </div>
+
+    <script>
+        let currentPlayer = "Guest";
+
+        // 1. 화면 전환
+        function submitName() {
+            const input = document.getElementById('playerName');
+            if(!input.value.trim()) return alert("이름을 입력해주세요.");
+            currentPlayer = input.value.trim();
+            document.getElementById('userDisplay').innerText = `Recorder: ${currentPlayer}`;
+            
+            document.getElementById('screen-name').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('screen-name').style.display = 'none';
+                const title = document.getElementById('screen-title');
+                title.style.display = 'flex';
+                setTimeout(() => title.style.opacity = '1', 50);
+            }, 500);
+        }
+
+        // 2. 프롤로그
+        const stories = [
+            { text: "태초, 형체 없는 혼돈의 심연 <span class='vn-highlight'>'눈(Nun)'</span>만이 그윽히 일렁이었도다.", img: "story_1.png" },
+            { text: "칠흑 같은 어둠을 가르고, 최초의 빛 <span class='vn-highlight'>'라(Ra)'</span>가 눈부시게 솟아올랐으니.", img: "story_2.png" },
+            { text: "신의 숨결에서 '슈'와 '테프누트'가 나투어, 비로소 하늘과 땅이 열리더라.", img: "story_3.png" },
+            { text: "태양의 눈에서 떨어진 환희의 눈물, 그것이 대지에 닿아 <span class='vn-highlight'>최초의 인간</span>이 되었다.", img: "story_4.png" },
+            { text: "신들이 강림하여 혼돈을 잠재우고, 절대적인 질서 <span class='vn-highlight'>'마아트'</span>의 법을 세우니.", img: "story_5.png" },
+            { text: "위대한 왕 <span class='vn-highlight'>'오시리스'</span>가 문명을 꽃피워, 세상은 찬란한 황금기를 맞이했노라.", img: "story_6.png" },
+            { text: "하나, 질투라는 검은 그림자가 드리워, 형제 <span class='vn-highlight'>'세트'</span>의 손에 위대한 왕이 스러지고 말았도다.", img: "story_7.png" },
+            { text: "아버지의 복수를 위해 일어선 아들 <span class='vn-highlight'>'호루스'</span>, 그 기나긴 신들의 전쟁이 시작되었다.", img: "story_8.png" },
+            { text: "이제 현세의 파라오는 지상의 호루스가 되어, 영원히 혼돈에 맞서 싸우리라.", img: "story_9.png" },
+            { text: "기원전 1350년. 신들의 숨결이 깃든 이 땅에서, 그대 손으로 기록할 <span class='vn-highlight'>새로운 신화</span>가 막을 올린다.", img: "story_10.png" }
+        ];
+        let storyIndex = 0;
+
+        function startPrologue() {
+            document.getElementById('screen-title').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('screen-title').style.display = 'none';
+                document.getElementById('screen-prologue').style.display = 'block';
+                updateStory();
+            }, 1000);
+        }
+        function updateStory() {
+            if(storyIndex >= stories.length) { endPrologue(); return; }
+            const s = stories[storyIndex];
+            const bg = document.getElementById('vnBg');
+            bg.style.opacity = 0; 
+            setTimeout(() => {
+                bg.style.backgroundImage = `url('${s.img}')`;
+                bg.style.opacity = 0.8; 
+                document.getElementById('vnText').innerHTML = s.text;
+            }, 300);
+        }
+        function nextStory() { storyIndex++; updateStory(); }
+        function endPrologue() {
+            document.getElementById('screen-prologue').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('screen-prologue').style.display = 'none';
+                const main = document.getElementById('screen-main');
+                main.style.display = 'flex'; 
+                setTimeout(() => main.style.opacity = '1', 50);
+                renderGallery('all');
+            }, 500);
+        }
+
+        // 3. 데이터 (설명 보강)
+        const characters = [
+            // [GODS]
+            { id: 1, group: 1, type: 'god', name: "Ra (라)", role: "태양신왕 | 절대권위", desc: "혼돈의 바다 눈(Nun)에서 스스로 솟아오른 태초의 창조주이자 태양 그 자체이다. 매일 아침 태양의 배 '만제트'를 타고 천상을 순행하며, 밤이면 명계의 뱀 아포피스와 끝없는 사투를 벌여 세상의 빛을 수호한다.", stats: "키:200cm|성격:엄격, 오만", relations: [{type:"자녀", targetId:2}, {type:"자녀", targetId:3}] },
+            { id: 2, group: 1, type: 'god', name: "Shu (슈)", role: "대기신", desc: "라의 숨결에서 태어난 공기와 빛의 신이다. 하늘(누트)과 땅(게브) 사이를 영원히 받치고 서 있어, 세상에 생명의 숨결을 불어넣고 혼돈으로부터 질서를 유지하는 기둥 역할을 한다.", stats: "키:190cm|성격:자유로움", relations: [{type:"아버지", targetId:1}, {type:"아내", targetId:3}] },
+            { id: 3, group: 1, type: 'god', name: "Tefnut (테프누트)", role: "습기여신", desc: "라의 침에서 태어난 이슬과 비, 습기의 여신이다. 사자의 머리를 한 맹렬한 면모를 지니고 있으며, 그녀가 분노하여 사막으로 떠나면 이집트는 가뭄에 시달리게 된다.", stats: "키:175cm|성격:감정적", relations: [{type:"아버지", targetId:1}, {type:"남편", targetId:2}] },
+            { id: 4, group: 1, type: 'god', name: "Geb (게브)", role: "대지신", desc: "대지를 관장하는 흙의 신이다. 그의 몸 위에서 곡식이 자라나고 강물이 흐른다. 때로는 그의 웃음이 지진을 일으키기도 하며, 지하 세계로 가는 길목을 지키기도 한다.", stats: "키:200cm|성격:온화, 고집", relations: [{type:"아내", targetId:5}] },
+            { id: 5, group: 1, type: 'god', name: "Nut (누트)", role: "하늘여신", desc: "별이 빛나는 밤하늘 그 자체인 거대한 여신이다. 손과 발로 땅을 짚어 하늘의 아치를 만들며, 매일 저녁 태양을 삼키고 아침마다 다시 낳는 순환의 어머니이다.", stats: "키:180cm|성격:신비로움", relations: [{type:"남편", targetId:4}] },
+            { id: 6, group: 1, type: 'god', name: "Osiris (오시리스)", role: "죽음부활신", desc: "한때 지상을 다스리며 문명을 꽃피운 위대한 왕이었으나, 형제의 배신으로 죽임을 당했다. 이제는 명계(두아트)의 왕좌에 앉아 죽은 자들의 영혼을 심판하고 영생을 관장한다.", stats: "키:185cm|성격:자비", relations: [{type:"아내", targetId:7}, {type:"동생", targetId:8}] },
+            { id: 7, group: 1, type: 'god', name: "Isis (이시스)", role: "마법여신", desc: "우주 최고의 마법사이자 지략가인 위대한 어머니 신이다. 흩어진 남편의 시신을 모아 부활시켰으며, 아들 호루스를 온갖 위협 속에서 키워낸 강인하고 지혜로운 여성상의 상징이다.", stats: "키:170cm|성격:지략", relations: [{type:"남편", targetId:6}, {type:"아들", targetId:10}] },
+            { id: 8, group: 1, type: 'god', name: "Set (세트)", role: "폭풍혼돈신", desc: "사막의 폭풍, 천둥, 그리고 혼돈을 관장하는 붉은 신이다. 형을 살해한 찬탈자라는 오명을 썼으나, 밤마다 라의 배를 위협하는 아포피스를 물리치는 가장 강력한 전사이기도 하다.", stats: "키:190cm|성격:파괴", relations: [{type:"형", targetId:6}] },
+            { id: 9, group: 1, type: 'god', name: "Nephthys (네프티스)", role: "죽음보호여신", desc: "이시스의 그림자이자 어둠을 관장하는 여신이다. 장례 의식과 미라 제작을 도우며, 죽은 자의 영혼이 길을 잃지 않도록 보호하는 조용하고 헌신적인 수호자이다.", stats: "키:168cm|성격:침묵", relations: [{type:"언니", targetId:7}] },
+            { id: 10, group: 2, type: 'god', name: "Horus (호루스)", role: "하늘왕권신", desc: "매의 머리를 한 하늘의 주인이자 현세 파라오의 수호신이다. 아버지 오시리스의 복수를 위해 세트와 기나긴 전쟁을 치렀으며, 잃어버린 눈(우자트)은 치유와 완전함의 상징이 되었다.", stats: "키:180cm|성격:정의", relations: [{type:"부모", targetId:6}] },
+            { id: 11, group: 2, type: 'god', name: "Anubis (아누비스)", role: "죽음미라신", desc: "자칼 머리를 한 명계의 인도자이자 미라의 신이다. 죽은 자의 심장을 마아트의 깃털과 저울질하여 생전의 죄를 심판하는 냉정하고 공정한 관리자이다.", stats: "키:175cm|성격:냉정", relations: [{type:"아버지", targetId:6}] },
+            { id: 12, group: 2, type: 'god', name: "Maat (마아트)", role: "정의진실여신", desc: "우주의 질서, 진리, 정의를 상징하는 여신이다. 그녀의 법도가 무너지면 세상은 다시 혼돈으로 돌아간다. 머리에 꽂은 깃털은 심판의 기준이 되는 절대적인 척도이다.", stats: "키:165cm|성격:공정", relations: [] },
+            { id: 13, group: 2, type: 'god', name: "Thoth (토트)", role: "지혜문자신", desc: "따오기 머리를 한 지식과 달, 서기의 신이다. 상형문자를 창조하고 마법의 주문을 기록했으며, 신들의 분쟁을 중재하는 냉철한 이성의 소유자이다.", stats: "키:170cm|성격:이성", relations: [{type:"아내", targetId:12}] },
+            { id: 14, group: 2, type: 'god', name: "Bastet (바스테트)", role: "고양이여신", desc: "가정의 평화, 음악, 춤, 그리고 즐거움을 수호하는 고양이 여신이다. 평소에는 사랑스럽지만, 소중한 것을 지킬 때는 암사자처럼 맹렬하게 돌변한다.", stats: "키:165cm|성격:장난", relations: [] },
+            { id: 15, group: 2, type: 'god', name: "Sekhmet (세케메트)", role: "사자전쟁여신", desc: "태양신의 분노가 형상화된 파괴와 전쟁의 여신이다. 피에 대한 갈증으로 인류를 멸망시킬 뻔했으나, 붉은 맥주에 취해 진정된 후 질병을 치유하는 힘도 갖게 되었다.", stats: "키:170cm|성격:포악", relations: [{type:"남편", targetId:19}] },
+            { id: 16, group: 2, type: 'god', name: "Hathor (하토르)", role: "사랑음악여신", desc: "사랑, 아름다움, 춤, 그리고 모성을 관장하는 하늘의 암소 여신이다. 서쪽의 여주인으로서 죽은 자를 환영하기도 하며, 축제와 기쁨이 있는 곳에 늘 함께한다.", stats: "키:168cm|성격:매혹", relations: [{type:"남편", targetId:10}] },
+            { id: 17, group: 2, type: 'god', name: "Tawaret (타와레트)", role: "출산하마여신", desc: "임신한 하마의 형상을 한 출산과 가정의 수호신이다. 흉측해 보이는 외모는 악귀를 쫓기 위함이며, 산모와 아이를 지키는 가장 강력하고 헌신적인 어머니이다.", stats: "키:180cm|성격:모성애", relations: [] },
+            { id: 18, group: 2, type: 'god', name: "Bes (베스)", role: "드워프수호신", desc: "우스꽝스러운 표정을 한 난쟁이 신이다. 춤과 노래로 악령을 물리치고, 잠자는 아이들과 가정을 보호하는 친근하고 익살스러운 수호자이다.", stats: "키:140cm|성격:익살", relations: [] },
+            { id: 19, group: 2, type: 'god', name: "Ptah (프타)", role: "창조수공예신", desc: "멤피스의 창조주이자 장인들의 신이다. 마음으로 생각하고 혀로 말하여 세상을 창조했다. 예술가와 건축가들에게 영감을 주는 과묵한 예술가이다.", stats: "키:180cm|성격:과묵", relations: [{type:"아내", targetId:15}] },
+            { id: 20, group: 2, type: 'god', name: "Sobek (소베크)", role: "악어강신", desc: "나일강의 흉폭함을 상징하는 악어 머리의 신이다. 파라오의 힘과 군사력을 상징하며, 자신의 영역을 침범하는 자에게는 무자비한 이빨을 드러낸다.", stats: "키:200cm|성격:야만", relations: [] },
+            { id: 21, group: 2, type: 'god', name: "Khnum (크넘)", role: "도자기양신", desc: "나일강의 진흙을 도공의 물레에 올려 인간의 육체를 빚어내는 창조신이다. 나일강의 발원지를 지키며 홍수의 범람을 조절한다.", stats: "키:175cm|성격:온화", relations: [] },
+            { id: 22, group: 2, type: 'god', name: "Amun (아문)", role: "숨겨진바람신", desc: "형체가 없는 바람이자 '숨겨진 자'이다. 신왕국의 수호신으로서 막강한 권력을 지니며, 나중에는 태양신 라와 결합하여 신들의 왕 '아문-라'가 된다.", stats: "키:190cm|성격:야심", relations: [{type:"아내", targetId:23}] },
+            { id: 23, group: 2, type: 'god', name: "Mut (무트)", role: "어머니여신", desc: "아문의 아내이자 테베의 위대한 어머니 여신이다. 독수리 관을 쓴 여왕의 모습으로, 파라오의 왕권을 수호하는 강력하고 엄격한 모성을 상징한다.", stats: "키:175cm|성격:엄격", relations: [{type:"남편", targetId:22}] },
+            { id: 24, group: 2, type: 'god', name: "Khonsu (콘수)", role: "달치유신", desc: "'여행하는 자'라는 뜻을 가진 달의 신이다. 밤하늘을 가로지르며 시간을 측정하고, 악령을 물리쳐 병든 자를 치유하는 신비로운 힘을 가졌다.", stats: "키:178cm|성격:신비", relations: [{type:"부모", targetId:22}] },
+            { id: 25, group: 2, type: 'god', name: "Serket (세르케트)", role: "전갈여신", desc: "맹독을 가진 전갈의 여신이다. 독으로 적을 죽이기도 하지만, 독으로부터 사람을 보호하고 치료하는 의술의 신이기도 하다.", stats: "키:163cm|성격:치명성", relations: [] },
+            
+            // [HUMANS]
+            { id: 26, group: 4, type: 'human', name: "Kai (카이)", role: "평민농부", desc: "나일강변의 비옥한 검은 땅을 일구며 살아가는 성실한 청년이다. 매년 찾아오는 범람을 기다리며, 소박하지만 단단한 삶을 영위한다.", stats: "키:165cm|성격:성실", relations: [] },
+            { id: 27, group: 4, type: 'human', name: "Neb (네브)", role: "평민어부", desc: "파피루스 배를 타고 나일강을 누비는 어부이다. 강물의 흐름을 읽는 눈이 탁월하며, 얽매이지 않는 자유로운 영혼을 가졌다.", stats: "키:170cm|성격:자유", relations: [] },
+            { id: 28, group: 4, type: 'human', name: "Zemti (젬티)", role: "건설노동자", desc: "파라오의 영원한 안식처를 짓는 건설 현장의 노동자이다. 뙤약볕 아래서 다져진 근육과 동료들을 챙기는 우직한 책임감을 지녔다.", stats: "키:180cm|성격:책임감", relations: [] },
+            { id: 29, group: 4, type: 'human', name: "Pentu (펜투)", role: "도공장인", desc: "진흙으로 그릇과 예술품을 빚어내는 도공이다. 작품에 티끌 하나 묻는 것을 용납하지 않는 예민한 성격의 완벽주의자이다.", stats: "키:168cm|성격:예민", relations: [] },
+            { id: 30, group: 4, type: 'human', name: "Haremhab (하렘하브)", role: "중산층상인", desc: "시장통의 소식통이자 계산이 빠른 상인이다. 사람 좋은 미소 뒤에 이익을 셈하는 날카로운 눈빛을 숨기고 있다.", stats: "키:172cm|성격:사교적", relations: [] },
+            { id: 31, group: 3, type: 'human', name: "Amenemheb (아메넴헤브)", role: "서기관", desc: "신성한 문자를 기록하고 관리하는 지식인이다. 파피루스 위에 역사를 남기며, 무력보다는 지식과 붓의 힘을 믿는다.", stats: "키:175cm|성격:지적", relations: [] },
+            { id: 32, group: 3, type: 'human', name: "Senusret (센우세르트)", role: "고위신관", desc: "신전 깊은 곳에서 신의 뜻을 받들고 의식을 주관하는 고위 성직자이다. 매사에 경건하며 신비로운 신성력을 지니고 있다.", stats: "키:178cm|성격:경건", relations: [] },
+            { id: 33, group: 3, type: 'human', name: "Ramesses (람세스)", role: "파라오", desc: "이집트를 통치하는 살아있는 신이자 태양의 아들이다. 좌중을 압도하는 카리스마와 위엄으로 제국을 번영으로 이끈다.", stats: "키:185cm|성격:카리스마", relations: [{type:"아내", targetId:37}, {type:"첩", targetId:36}] },
+            { id: 34, group: 4, type: 'human', name: "Nefert (네페르트)", role: "평민직조공", desc: "아마실로 고운 옷감을 짜는 솜씨 좋은 직조공이다. 차분하고 섬세한 성격으로, 그녀의 손끝에서 아름다운 패턴이 탄생한다.", stats: "키:162cm|성격:차분", relations: [] },
+            { id: 35, group: 3, type: 'human', name: "Nerti (네르티)", role: "여신관", desc: "신전에서 춤과 노래로 신을 찬양하는 여신관이다. 우아한 몸짓 속에 알 수 없는 신비로움을 간직하고 있다.", stats: "키:168cm|성격:신비", relations: [] },
+            { id: 36, group: 3, type: 'human', name: "Meritaten (메리타텐)", role: "궁정무희", desc: "화려한 춤사위로 왕궁의 연회를 빛내는 무희이다. 유연한 몸짓과 매혹적인 눈빛으로 보는 이들의 혼을 빼놓는다.", stats: "키:165cm|성격:매혹", relations: [] },
+            { id: 37, group: 3, type: 'human', name: "Ahmose-Nefertari", role: "대왕비", desc: "파라오의 곁을 지키며 안살림을 관장하는 고귀한 왕비이다. 함부로 범접할 수 없는 기품과 위엄이 흐른다.", stats: "키:170cm|성격:위엄", relations: [{type:"남편", targetId:33}] },
+            { id: 38, group: 5, type: 'human', name: "Kemset (켐세트)", role: "떠돌이점술사", desc: "거리를 떠돌며 사람들의 미래를 엿보는 점술사이다. 낡은 겉모습 뒤에 세상을 꿰뚫어 보는 통찰력을 숨기고 있다.", stats: "키:172cm|성격:신비", relations: [] },
+            { id: 39, group: 5, type: 'human', name: "Anaket (아나케트)", role: "미라도둑", desc: "왕가의 계곡을 제집처럼 드나드는 대담한 도둑이다. 죽은 자의 저주보다 당장의 굶주림을 더 무서워한다.", stats: "키:158cm|성격:대담", relations: [] },
+            { id: 40, group: 5, type: 'human', name: "Seneb (세네브)", role: "밀수업자", desc: "나일강의 어둠을 틈타 금지된 물건을 거래하는 밀수꾼이다. 돈이 되는 일이라면 위험도 마다하지 않는 간교한 인물이다.", stats: "키:163cm|성격:간교", relations: [] },
+            { id: 41, group: 5, type: 'human', name: "Nebethet (네베트헤트)", role: "미친여예언자", desc: "광기에 사로잡혀 이해할 수 없는 예언을 쏟아내는 여인이다. 그녀의 헛소리 속에 소름 끼치는 진실이 섞여 있을지도 모른다.", stats: "키:170cm|성격:광기", relations: [] },
+            { id: 42, group: 4, type: 'human', name: "Habet (하베트)", role: "베두인안내자", desc: "척박한 사막의 길을 훤히 꿰뚫고 있는 안내자이다. 바람처럼 자유롭게 사막을 누비며 어떤 길도 잃지 않는다.", stats: "키:178cm|성격:자유", relations: [] },
+            { id: 43, group: 5, type: 'human', name: "Pafnu (파프누)", role: "노예출신도둑", desc: "가혹한 운명에서 도망친 노예 출신의 도둑이다. 세상에 대한 깊은 증오와 복수심을 품고 어둠 속을 배회한다.", stats: "키:160cm|성격:복수", relations: [] },
+            { id: 44, group: 4, type: 'human', name: "Tabet (타베트)", role: "술집여주인", desc: "시끌벅적한 술집을 호령하는 여주인이다. 호탕한 성격과 걸걸한 입담으로 거친 손님들을 휘어잡는다.", stats: "키:166cm|성격:호탕", relations: [] },
+            { id: 45, group: 4, type: 'human', name: "Imentet (이멘테트)", role: "장례용품제작자", desc: "죽은 자를 위한 관과 부적을 만드는 장인이다. 늘 죽음과 가까이 지내기에 창백하고 우울한 기운을 풍긴다.", stats: "키:164cm|성격:우울", relations: [] },
+            { id: 46, group: 5, type: 'human', name: "Senu (세누)", role: "노숙자", desc: "거리 구석에 웅크려 살아가는 정체불명의 인물이다. 단순한 거지가 아닌 듯, 때때로 날카롭고 신비로운 눈빛을 보인다.", stats: "키:175cm|성격:신비", relations: [] }
+        ];
+
+        // 4. 네비게이션 & 필터링
+        function resetAndFilter(type, btn) {
+            document.querySelectorAll('.sub-menu').forEach(el => el.classList.remove('show'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+            
+            document.getElementById('gallery').style.display = 'grid';
+            document.getElementById('history-container').style.display = 'none';
+            
+            filterGallery(type, null);
+        }
+
+        function toggleSubMenu(menuId, btn, baseType) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.sub-menu').forEach(el => {
+                if(el.id !== menuId) el.classList.remove('show');
+            });
+
+            btn.classList.add('active');
+            const menu = document.getElementById(menuId);
+            menu.classList.toggle('show');
+
+            filterGallery(baseType, null);
+        }
+
+        function filterGallery(filterType, subBtn, isAllSub = false) {
+            if(subBtn) {
+                document.querySelectorAll('.sub-item').forEach(el => el.classList.remove('active'));
+                subBtn.classList.add('active');
+            }
+            
+            document.getElementById('gallery').style.display = 'grid';
+            document.getElementById('history-container').style.display = 'none';
+
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+            let filteredData = [];
+
+            if (filterType === 'all') {
+                filteredData = characters;
+                document.getElementById('sectionTitle').innerText = "ALL";
+            } else if (filterType === 'god') {
+                filteredData = characters.filter(c => c.type === 'god');
+                document.getElementById('sectionTitle').innerText = "GODS";
+            } else if (filterType === 'human') {
+                filteredData = characters.filter(c => c.type === 'human');
+                document.getElementById('sectionTitle').innerText = "HUMANS";
+            } else {
+                if(filterType === 'god-ennead') { filteredData = characters.filter(c => c.group === 1); document.getElementById('sectionTitle').innerText = "ENNEAD"; }
+                else if(filterType === 'god-other') { filteredData = characters.filter(c => c.group === 2); document.getElementById('sectionTitle').innerText = "GUARDIANS"; }
+                else if(filterType === 'human-high') { filteredData = characters.filter(c => c.group === 3); document.getElementById('sectionTitle').innerText = "NOBLES"; }
+                else if(filterType === 'human-mid') { filteredData = characters.filter(c => c.group === 4); document.getElementById('sectionTitle').innerText = "CITIZENS"; }
+                else if(filterType === 'human-low') { filteredData = characters.filter(c => c.group === 5); document.getElementById('sectionTitle').innerText = "OUTCASTS"; }
+            }
+
+            filteredData.forEach((char, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.animation = `fadeIn 0.5s ease forwards ${index * 0.05}s`;
+                card.onclick = () => openModal(char.id);
+                const imgSrc = `${char.id}.png`;
+                card.innerHTML = `<div class="card-img-box"><img src="${imgSrc}" class="card-img" onerror="this.src='https://via.placeholder.com/600x400/1a1a1a/555?text=${char.name.split(' ')[0]}'"></div><div class="card-info"><div class="card-name">${char.name.split('(')[0]}</div><div class="card-role">${char.role.split('|')[0]}</div></div>`;
+                gallery.appendChild(card);
+            });
+        }
+
+        // History
+        const historyData = [
+            { year: "태초 (Creation)", title: "누와 아툼", desc: "혼돈의 물 '누'에서 벤벤 언덕이 솟아오르고, 창조신 아툼(라)이 스스로 존재하게 되었다." },
+            { year: "신성한 질서", title: "엔네아드의 탄생", desc: "슈(공기)와 테프누트(습기)가 태어나고, 게브(땅)와 누트(하늘)가 나뉘어 세상의 기틀이 마련되었다." },
+            { year: "황금 시대", title: "오시리스의 통치", desc: "오시리스가 지상을 다스리며 인간에게 농경과 문명을 전파하고 평화로운 시대를 열었다." },
+            { year: "혼돈의 시대", title: "세트의 반란", desc: "질투에 눈먼 세트가 형 오시리스를 살해하고 왕위를 찬탈하여 이집트에 어둠이 드리웠다." },
+            { year: "왕권 전쟁", title: "호루스의 복수", desc: "이시스의 아들 호루스가 성장하여 세트와 80년간의 긴 전쟁을 치르고 정당한 왕권을 되찾았다." },
+            { year: "파라오의 시대", title: "신의 대리자", desc: "신들은 천상으로 돌아가고, 호루스의 현신인 인간 파라오가 마아트(정의)를 수호하며 통치하기 시작했다." }
+        ];
+
+        function showHistory(btn) {
+            document.querySelectorAll('.sub-menu').forEach(el => el.classList.remove('show'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+
+            document.getElementById('sectionTitle').innerText = "HISTORY";
+            document.getElementById('gallery').style.display = 'none';
+            document.getElementById('history-container').style.display = 'block';
+            
+            const container = document.getElementById('history-container');
+            container.innerHTML = '<div class="timeline-line"></div>';
+            historyData.forEach((h, i) => {
+                const item = document.createElement('div');
+                item.className = 'timeline-item';
+                item.style.animationDelay = `${i * 0.2}s`;
+                item.innerHTML = `<div class="t-year">${h.year}</div><div class="t-title">${h.title}</div><div class="t-desc">${h.desc}</div>`;
+                container.appendChild(item);
+            });
+        }
+
+        // 5. 모달
+        function openModal(id) {
+            const char = characters.find(c => c.id === id);
+            if(!char) return;
+            document.getElementById('modalName').innerText = char.name;
+            document.getElementById('modalRole').innerText = char.role;
+            document.getElementById('modalDesc').innerText = char.desc;
+            const imgEl = document.getElementById('modalImg');
+            imgEl.src = `${char.id}.png`;
+            imgEl.onerror = function() { this.src='https://via.placeholder.com/200x200/111/555?text=No Image'; };
+            const stats = char.stats.split('|').map(s => {
+                const [l, v] = s.split(':');
+                return `<div class="stat-item"><strong>${l.trim()}</strong><span>${v?v.trim():''}</span></div>`;
+            }).join('');
+            document.getElementById('modalStats').innerHTML = stats;
+            const relBox = document.getElementById('relationChips');
+            relBox.innerHTML = '';
+            if(char.relations && char.relations.length > 0) {
+                char.relations.forEach(r => {
+                    const t = characters.find(x => x.id === r.targetId);
+                    if(t) {
+                        const chip = document.createElement('div');
+                        chip.className = 'chip';
+                        chip.innerHTML = `<b>${r.type}</b> ${t.name.split('(')[0]}`;
+                        chip.onclick = (e) => { e.stopPropagation(); openModal(t.id); };
+                        relBox.appendChild(chip);
+                    }
+                });
+            } else { relBox.innerHTML = '<span style="color:#555; font-size:0.9rem;">알려진 관계가 없다.</span>'; }
+            document.getElementById('modal').classList.add('open');
+        }
+        function closeModal() { document.getElementById('modal').classList.remove('open'); }
+        function closeModalBtn() { closeModal(); }
+
+        // 6. 게임 허브 (서바이벌 퀴즈)
+        function openGameHub() {
+            document.getElementById('screen-game').style.display = 'flex';
+            document.getElementById('gameHubMenu').style.display = 'flex';
+            document.getElementById('game-area-quiz').style.display = 'none';
+        }
+        function closeGameHub() {
+            document.getElementById('screen-game').style.display = 'none';
+        }
+
+        function startGame(type) {
+            document.getElementById('gameHubMenu').style.display = 'none';
+            if(type === 'quiz') {
+                document.getElementById('game-area-quiz').style.display = 'flex';
+                initQuiz();
+            }
+        }
+
+        // -- QUIZ GAME (Survival) --
+        let quizScore = 0;
+        function initQuiz() {
+            quizScore = 0;
+            document.getElementById('quizScore').innerText = `Score: ${quizScore}`;
+            loadQuizQuestion();
+        }
+
+        function loadQuizQuestion() {
+            const target = characters[Math.floor(Math.random() * characters.length)];
+            document.getElementById('quizQuestion').innerText = `"${target.desc}"\n이 설명에 해당하는 인물은?`;
+            
+            let options = [target];
+            while(options.length < 4) {
+                let r = characters[Math.floor(Math.random() * characters.length)];
+                if(!options.includes(r)) options.push(r);
+            }
+            options.sort(() => 0.5 - Math.random());
+            
+            const optsDiv = document.getElementById('quizOptions');
+            optsDiv.innerHTML = '';
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-btn';
+                btn.innerText = opt.name.split('(')[0];
+                btn.onclick = () => checkAnswer(opt.id === target.id);
+                optsDiv.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(isCorrect) {
+            if(isCorrect) {
+                quizScore++;
+                document.getElementById('quizScore').innerText = `Score: ${quizScore}`;
+                loadQuizQuestion();
+            } else {
+                alert(`Game Over!\n최종 점수: ${quizScore}점`);
+                openGameHub();
+            }
+        }
+
+        // 초기 로드
+        renderGallery('all');
+    </script>
+</body>
+</html>/* === Mobile Fix (핵심) === */
+@media (max-width: 480px) {
+  header { padding: 3rem 1rem; }
+  header h1 { font-size: 2rem; letter-spacing: 2px; }
+  header p { font-size: 1rem; }
+
+  .container { padding: 1rem; }
+
+  section { padding: 1rem; }
+
+  /* 300px/280px 최소폭 때문에 깨지는 거 방지 */
+  .rules-grid { grid-template-columns: 1fr; }
+  .card-grid { grid-template-columns: 1fr; }
+
+  /* 카드 내부 줄바꿈 더 자연스럽게 */
+  .stat-line {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  /* 시스템 로그 박스 가로 넘침 방지 */
+  .system-note {
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
